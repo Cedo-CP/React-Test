@@ -1,0 +1,106 @@
+/* Base styles */
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #F7FAFC;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* General styles */
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Header styles */
+header {
+    padding: 20px 0;
+    border-bottom: 1px solid #E2E8F0;
+}
+
+header img {
+    display: block;
+    margin: 0 auto;
+}
+
+header h1 {
+    margin-top: 20px;
+    color: #2D3748;
+}
+
+/* Form styles */
+form {
+    margin-top: 40px;
+}
+
+label {
+    display: block;
+    margin-bottom: 10px;
+    color: #4A5568;
+}
+
+textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #E2E8F0;
+    border-radius: 5px;
+    resize: vertical;
+}
+
+button {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:focus {
+    outline: none;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+/* Analysis cards styles */
+#analysisCards {
+    margin-top: 40px;
+}
+
+#analysisCards div {
+    padding: 20px;
+    background-color: #FFFFFF;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+#analysisCards h2 {
+    margin-bottom: 20px;
+    color: #2D3748;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#analysisCards p {
+    margin-bottom: 10px;
+    color: #4A5568;
+}
+
+#analysisCards progress {
+    width: 100%;
+}
+
+/* Additional styles or customizations can be added below. */
