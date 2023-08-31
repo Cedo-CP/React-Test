@@ -75,7 +75,7 @@ def identify_documents():
 
         try:
             identification_response = openai.ChatCompletion.create(
-                model='meta-llama/llama-2-13b-chat',
+                model='meta-llama/llama-2-70b-chat',
                 headers={
                     "HTTP-Referer": OPENROUTER_REFERRER
                 },
@@ -138,18 +138,18 @@ def start_analysis_for_url():
     combined_response = ""
 
     for chunk in chunks:
+        print(chunks)
         analysis_message = [
-            {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": analysis_prompt[1]['content']},
             {"role": "user", "content": chunk}
-        ]
+    ]
         try:
             response = openai.ChatCompletion.create(
-                model='meta-llama/llama-2-13b-chat',
+                model='meta-llama/llama-2-70b-chat',
                 headers={"HTTP-Referer": OPENROUTER_REFERRER},
                 messages=analysis_message,
-                max_tokens=5000,
-                temperature=0.5,
+                max_tokens=1000,
+                temperature=0.2,
                 top_p=1,
                 transforms=["middle-out"]
             )
@@ -172,6 +172,68 @@ def start_analysis_for_url():
 @app.route('/check-status', methods=['GET'])
 def check_status():
     return jsonify(status)
+
+@app.route('/summarize-all-responses', methods=['GET'])
+def summarize_all_responses():
+    combined_responses = {
+        "bank statement": "",
+        "financial statement": ""
+    }
+
+    # Combine all responses based on document type
+    for pdf_url, data in status.items():
+        document_type = data.get("document_type", "")
+        analysis = data.get("analysis", "")
+
+        if "bank statement" in document_type.lower():
+            combined_responses["bank statement"] += analysis + "\n\n"
+        elif "financial statement" in document_type.lower():
+            combined_responses["financial statement"] += analysis + "\n\n"
+
+    # Send combined responses to OpenAI for summarization
+    summaries = {}
+    for doc_type, combined_response in combined_responses.items():
+        chunks = chunk_text(combined_response, CHUNK_SIZE)
+        summarized_response = ""
+
+        for chunk in chunks:
+            if doc_type == "bank statement":
+                analysis_message = [
+                    {"role": "system", "content": "You are a financial expert."},
+                    {"role": "user", "content": "Given the following ending bank balances, calculate the average balance."},
+                    {"role": "user", "content": chunk}
+                ]
+            elif doc_type == "financial statement":
+                analysis_message = [
+                    {"role": "system", "content": "You are a financial expert."},
+                    {"role": "user", "content": ("Given the following financial statements, extract the following details by year:"
+                                                "Gross Revenue, Profit (Loss), Cash/Liquidity, Total Assets, Total Liabilities, "
+                                                "Current Assets, Current Liabilities, Current Assets less Inventory, Total Equity.")},
+                    {"role": "user", "content": chunk}
+                ]
+
+            try:
+                response = openai.ChatCompletion.create(
+                    model='meta-llama/llama-2-70b-chat',
+                    headers={"HTTP-Referer": OPENROUTER_REFERRER},
+                    messages=analysis_message,
+                    max_tokens=5000,
+                    temperature=0.3,
+                    top_p=1,
+                    transforms=["middle-out"]
+                )
+
+                response_content = response.get('choices', [{}])[0].get('message', {}).get('content', '')
+                summarized_response += response_content + "\n"
+
+            except openai.error.OpenAIError as e:
+                if "requires moderation" in str(e):
+                    logging.error(f"Moderation error for {doc_type}: {e}")
+                    return jsonify(error="API Response Error: Please try again."), 403
+
+        summaries[doc_type] = summarized_response
+
+    return jsonify(summaries)
 
 @app.route('/', methods=['GET', 'POST'])
 def home():

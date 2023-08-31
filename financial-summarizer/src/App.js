@@ -39,7 +39,7 @@ function App() {
                     pdf_url: pdfUrl,
                 }),
             });
-    
+
             const data = await response.json();
             if (data.success) {
                 setStatus(prevStatus => {
@@ -58,7 +58,23 @@ function App() {
             console.error("Error starting analysis:", error);
         }
     };
-      
+
+    const handleSummarizeResponses = async () => {
+        try {
+            const response = await fetch(`${FLASK_SERVER_URL}/summarize-all-responses`, {
+                method: 'GET',
+            });
+
+            const data = await response.json();
+            console.log(data); // Log the summarized data to the console for now.
+
+        } catch (error) {
+            console.error("Error summarizing responses:", error);
+        }
+    };
+
+    const allAnalysisCompleted = Object.values(status).every(details => details.step === "Analysis Completed");
+
     return (
         <div className="container mx-auto p-4">
             <header className="text-center mb-12">
@@ -82,36 +98,44 @@ function App() {
                     <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
                         Identify Documents
                     </button>
+                    {allAnalysisCompleted && (
+                        <button 
+                            type="button"
+                            className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4"
+                            onClick={handleSummarizeResponses}
+                        >
+                            Summarize Responses
+                        </button>
+                    )}
                 </form>
             </section>
             <section id="analysisCards">
-    {Object.entries(status).map(([pdfUrl, details]) => (
-        <div key={pdfUrl} className="bg-white p-4 rounded shadow mt-4">
-            <h2 className="text-xl mb-2 truncate">{pdfUrl}</h2>
-            <p><strong>Type:</strong> {details.document_type}</p>
-            <p><strong>Step:</strong> {details.step}</p>
-            <div className="mt-4">
-                {details.analysis ? (
-                    <button className="bg-green-500 text-white px-4 py-2 rounded">Analysis Complete</button>
-                ) : details.step === "Identification Completed" ? (
-                    <button onClick={() => handleStartAnalysis(pdfUrl)} className="bg-blue-500 text-white px-4 py-2 rounded">Start Analysis</button>
-                ) : null}
-            </div>
-            <div className="mt-4">
-                <progress value="50" max="100" className="w-full"></progress>
-            </div>
-            <div className="mt-4">
-            <strong>Analysis:</strong>
-<ul>
-    {Array.isArray(details.analysis) && details.analysis.map((line, idx) => (
-        <li key={idx}>{line}</li>
-    ))}
-</ul>
-            </div>
-        </div>
-    ))}
-</section>
-
+                {Object.entries(status).map(([pdfUrl, details]) => (
+                    <div key={pdfUrl} className="bg-white p-4 rounded shadow mt-4">
+                        <h2 className="text-xl mb-2 truncate">{pdfUrl}</h2>
+                        <p><strong>Type:</strong> {details.document_type}</p>
+                        <p><strong>Step:</strong> {details.step}</p>
+                        <div className="mt-4">
+                            {details.analysis ? (
+                                <button className="bg-green-500 text-white px-4 py-2 rounded">Analysis Complete</button>
+                            ) : details.step === "Identification Completed" ? (
+                                <button onClick={() => handleStartAnalysis(pdfUrl)} className="bg-blue-500 text-white px-4 py-2 rounded">Start Analysis</button>
+                            ) : null}
+                        </div>
+                        <div className="mt-4">
+                            <progress value="50" max="100" className="w-full"></progress>
+                        </div>
+                        <div className="mt-4">
+                        <strong>Analysis:</strong>
+                        <ul>
+                            {Array.isArray(details.analysis) && details.analysis.map((line, idx) => (
+                                <li key={idx}>{line}</li>
+                            ))}
+                        </ul>
+                        </div>
+                    </div>
+                ))}
+            </section>
         </div>
     );
 }
