@@ -5,6 +5,7 @@ import AnalysisCards from './components/AnalysisCards';
 function App() {
     const [pdfUrls, setPdfUrls] = useState('');
     const [status, setStatus] = useState({});
+    const [summarizedResponses, setSummarizedResponses] = useState({});
     const FLASK_SERVER_URL = 'http://127.0.0.1:5000';
 
     const handleIdentifyDocuments = async (event) => {
@@ -64,14 +65,14 @@ function App() {
             const response = await fetch(`${FLASK_SERVER_URL}/summarize-all-responses`, {
                 method: 'GET',
             });
-
+    
             const data = await response.json();
-            console.log(data); // Log the summarized data to the console for now.
-
+            setSummarizedResponses(data);
+    
         } catch (error) {
             console.error("Error summarizing responses:", error);
         }
-    };
+    };    
 
     const allAnalysisCompleted = Object.values(status).every(details => details.step === "Analysis Completed");
 
@@ -110,32 +111,40 @@ function App() {
                 </form>
             </section>
             <section id="analysisCards">
-                {Object.entries(status).map(([pdfUrl, details]) => (
-                    <div key={pdfUrl} className="bg-white p-4 rounded shadow mt-4">
-                        <h2 className="text-xl mb-2 truncate">{pdfUrl}</h2>
-                        <p><strong>Type:</strong> {details.document_type}</p>
-                        <p><strong>Step:</strong> {details.step}</p>
-                        <div className="mt-4">
-                            {details.analysis ? (
-                                <button className="bg-green-500 text-white px-4 py-2 rounded">Analysis Complete</button>
-                            ) : details.step === "Identification Completed" ? (
-                                <button onClick={() => handleStartAnalysis(pdfUrl)} className="bg-blue-500 text-white px-4 py-2 rounded">Start Analysis</button>
-                            ) : null}
-                        </div>
-                        <div className="mt-4">
-                            <progress value="50" max="100" className="w-full"></progress>
-                        </div>
-                        <div className="mt-4">
-                        <strong>Analysis:</strong>
-                        <ul>
-                            {Array.isArray(details.analysis) && details.analysis.map((line, idx) => (
-                                <li key={idx}>{line}</li>
-                            ))}
-                        </ul>
-                        </div>
-                    </div>
-                ))}
-            </section>
+    {Object.entries(status).map(([pdfUrl, details]) => (
+        <div key={pdfUrl} className="bg-white p-4 rounded shadow mt-4">
+            <h2 className="text-xl mb-2 truncate">{pdfUrl}</h2>
+            <p><strong>Type:</strong> {details.document_type}</p>
+            <p><strong>Step:</strong> {details.step}</p>
+            <div className="mt-4">
+                {details.analysis ? (
+                    <button className="bg-green-500 text-white px-4 py-2 rounded">Analysis Complete</button>
+                ) : details.step === "Identification Completed" ? (
+                    <button onClick={() => handleStartAnalysis(pdfUrl)} className="bg-blue-500 text-white px-4 py-2 rounded">Start Analysis</button>
+                ) : null}
+            </div>
+            <div className="mt-4">
+                <progress value="50" max="100" className="w-full"></progress>
+            </div>
+            <div className="mt-4">
+                <strong>Analysis:</strong>
+                <ul>
+                    {Array.isArray(details.analysis) && details.analysis.map((line, idx) => (
+                        <li key={idx}>{line}</li>
+                    ))}
+                </ul>
+            </div>
+
+            {/* New section inside the card to display summarized data */}
+            {summarizedResponses[pdfUrl] && (
+                <div className="mt-4 bg-gray-100 p-2 rounded">
+                    <strong>Summary:</strong>
+                    <p>{summarizedResponses[pdfUrl]}</p>
+                </div>
+            )}
+        </div>
+    ))}
+</section>
         </div>
     );
 }
