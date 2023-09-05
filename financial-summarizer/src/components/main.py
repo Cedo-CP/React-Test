@@ -11,6 +11,7 @@ import logging
 from dotenv import load_dotenv
 
 app = Flask(__name__, static_folder='financial-summarizer/src/components/build')
+CORS(app)
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
@@ -20,7 +21,8 @@ def serve(path):
     else:
         return send_from_directory(app.static_folder, 'index.html')
 
-CORS(app)
+if __name__ == '__main__':
+    app.run()
 
 load_dotenv()
 
@@ -250,6 +252,3 @@ def summarize_all_responses():
 def home():
     return render_template('index.html', status=status)
 
-if __name__ == '__main__':
-    print(f'Endpoint: {rule.endpoint}, Route: {rule.rule}, Methods: {rule.methods}')
-    app.run(debug=True)
