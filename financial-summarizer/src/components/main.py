@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, render_template, jsonify, send_from_directory
 from flask_cors import CORS
 import openai
 import tiktoken
@@ -10,7 +10,15 @@ import time
 import logging
 from dotenv import load_dotenv
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='financial-summarizer/src/components/build')
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
 
 CORS(app)
 
@@ -25,6 +33,9 @@ print(os.getenv("OPENAI_API_KEY"))
 OPENROUTER_REFERRER = "https://github.com/Cedo-CP/GPT.git"
 
 CHUNK_SIZE = 30000  # Adjust as needed
+
+for rule in app.url_map.iter_rules():
+    print(f'Endpoint: {rule.endpoint}, Route: {rule.rule}, Methods: {rule.methods}')
 
 def extract_text_from_pdf(pdf_url, pages=None):
     with requests.get(pdf_url, stream=True) as response:
@@ -240,4 +251,5 @@ def home():
     return render_template('index.html', status=status)
 
 if __name__ == '__main__':
+    print(f'Endpoint: {rule.endpoint}, Route: {rule.rule}, Methods: {rule.methods}')
     app.run(debug=True)
