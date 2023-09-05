@@ -1,6 +1,7 @@
 {
   "name": "chatgpt-clone",
   "version": "0.1.0",
+  "homepage": "https://uaas-pass.uc.r.appspot.com/",
   "private": true,
   "dependencies": {
     "@testing-library/jest-dom": "^5.17.0",

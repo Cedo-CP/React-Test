@@ -1,0 +1,30 @@
+runtime: python311
+entrypoint: gunicorn main:app  # Assuming "main" is the name of your Flask app's main module.
+
+instance_class: F2
+
+automatic_scaling:
+  target_cpu_utilization: .65
+  min_instances: 1
+  max_instances: 10
+
+# Define static handlers
+handlers:
+  # Serve images, icons, and json from React build
+  - url: /(.*\.(json|ico|jpg|png|svg))
+    static_files: build/\1
+    upload: build/.*\.(json|ico|jpg|png|svg)
+
+  # Serve CSS and JS from React build
+  - url: /static/(.*\.(css|js))
+    static_files: build/static/\1
+    upload: build/static/.*\.(css|js)
+
+  # Let Flask handle all other routes
+  - url: /.*
+    script: auto
+
+# Environment variables can be added if needed.
+env_variables:
+  SECRET_KEY: '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'
+  
