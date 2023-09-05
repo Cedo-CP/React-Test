@@ -75,7 +75,7 @@ def identify_documents():
 
         try:
             identification_response = openai.ChatCompletion.create(
-                model='meta-llama/llama-2-70b-chat',
+                model='openai/gpt-3.5-turbo-16k',
                 headers={
                     "HTTP-Referer": OPENROUTER_REFERRER
                 },
@@ -214,7 +214,7 @@ def summarize_all_responses():
 
             try:
                 response = openai.ChatCompletion.create(
-                    model='meta-llama/llama-2-70b-chat',
+                    model='openai/gpt-3.5-turbo-16k',
                     headers={"HTTP-Referer": OPENROUTER_REFERRER},
                     messages=analysis_message,
                     max_tokens=5000,

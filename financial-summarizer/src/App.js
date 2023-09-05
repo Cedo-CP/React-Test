@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import AnalysisCards from './components/AnalysisCards';
+import SummaryCard from './components/SummaryCard';
+
 
 function App() {
     const [pdfUrls, setPdfUrls] = useState('');
@@ -40,7 +42,7 @@ function App() {
                     pdf_url: pdfUrl,
                 }),
             });
-
+    
             const data = await response.json();
             if (data.success) {
                 setStatus(prevStatus => {
@@ -58,7 +60,10 @@ function App() {
         } catch (error) {
             console.error("Error starting analysis:", error);
         }
-    };
+        
+        // Log the updated status to see if the component is re-rendering
+        console.log(status);
+    };    
 
     const handleSummarizeResponses = async () => {
         try {
@@ -110,41 +115,50 @@ function App() {
                     )}
                 </form>
             </section>
-            <section id="analysisCards">
-    {Object.entries(status).map(([pdfUrl, details]) => (
-        <div key={pdfUrl} className="bg-white p-4 rounded shadow mt-4">
-            <h2 className="text-xl mb-2 truncate">{pdfUrl}</h2>
-            <p><strong>Type:</strong> {details.document_type}</p>
-            <p><strong>Step:</strong> {details.step}</p>
-            <div className="mt-4">
-                {details.analysis ? (
-                    <button className="bg-green-500 text-white px-4 py-2 rounded">Analysis Complete</button>
-                ) : details.step === "Identification Completed" ? (
-                    <button onClick={() => handleStartAnalysis(pdfUrl)} className="bg-blue-500 text-white px-4 py-2 rounded">Start Analysis</button>
-                ) : null}
-            </div>
-            <div className="mt-4">
-                <progress value="50" max="100" className="w-full"></progress>
-            </div>
-            <div className="mt-4">
-                <strong>Analysis:</strong>
-                <ul>
-                    {Array.isArray(details.analysis) && details.analysis.map((line, idx) => (
-                        <li key={idx}>{line}</li>
-                    ))}
-                </ul>
-            </div>
 
-            {/* New section inside the card to display summarized data */}
-            {summarizedResponses[pdfUrl] && (
-                <div className="mt-4 bg-gray-100 p-2 rounded">
-                    <strong>Summary:</strong>
-                    <p>{summarizedResponses[pdfUrl]}</p>
-                </div>
-            )}
-        </div>
-    ))}
-</section>
+            <section id="analysisCards">
+                {Object.entries(status).map(([pdfUrl, details]) => (
+                    <div key={pdfUrl} className="bg-white p-4 rounded shadow mt-4">
+                        <h2 className="text-xl mb-2 truncate">{pdfUrl}</h2>
+                        <p><strong>Type:</strong> {details.document_type}</p>
+                        <p><strong>Step:</strong> {details.step}</p>
+                        <div className="mt-4">
+                            {details.analysis ? (
+                                <button className="bg-green-500 text-white px-4 py-2 rounded">Analysis Complete</button>
+                            ) : details.step === "Identification Completed" ? (
+                                <button onClick={() => handleStartAnalysis(pdfUrl)} className="bg-blue-500 text-white px-4 py-2 rounded">Start Analysis</button>
+                            ) : null}
+                        </div>
+                        <div className="mt-4">
+                            <progress value="50" max="100" className="w-full"></progress>
+                        </div>
+                        <div className="mt-4">
+                            <strong>Analysis:</strong>
+                            <ul>
+                                {Array.isArray(details.analysis) && details.analysis.map((line, idx) => (
+                                    <li key={idx}>{line}</li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        {/* New section inside the card to display summarized data */}
+                        {summarizedResponses[pdfUrl] && (
+                            <div className="mt-4 bg-gray-100 p-2 rounded">
+                                <strong>Summary:</strong>
+                                <p>{summarizedResponses[pdfUrl]}</p>
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </section>
+
+            {/* New Section for SummaryCard */}
+            <section>
+                {Object.keys(summarizedResponses).length > 0 && (
+                    <SummaryCard summaries={summarizedResponses} />
+                )}
+            </section>
+
         </div>
     );
 }
