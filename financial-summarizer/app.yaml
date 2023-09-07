@@ -1,5 +1,5 @@
 runtime: python311
-entrypoint: gunicorn -b :$PORT main:app  # "-b :$PORT" ensures it binds to the port GAE provides.
+entrypoint: gunicorn -b :$PORT app:app  # "-b :$PORT" ensures it binds to the port GAE provides.
 
 instance_class: F2
 
