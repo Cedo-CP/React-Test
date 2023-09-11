@@ -10,7 +10,7 @@ import time
 import logging
 from dotenv import load_dotenv
 
-app = Flask(__name__, static_folder='financial-summarizer/src/components/build')
+app = Flask(__name__,)
 CORS(app)
 
 @app.route('/', defaults={'path': ''})
@@ -252,3 +252,5 @@ def summarize_all_responses():
 def home():
     return render_template('index.html', status=status)
 
+if __name__ == '__app__':
+    app.run(debug=True)
