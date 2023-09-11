@@ -13,17 +13,6 @@ from dotenv import load_dotenv
 app = Flask(__name__,)
 CORS(app)
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve(path):
-    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
-        return send_from_directory(app.static_folder, path)
-    else:
-        return send_from_directory(app.static_folder, 'index.html')
-
-if __name__ == '__main__':
-    app.run()
-
 load_dotenv()
 
 # Set up basic logging configuration
@@ -137,7 +126,7 @@ def start_analysis_for_url():
     if "bank statement" in document_type.lower():
         analysis_prompt = [
             {"role": "system", "content": "You are a financial expert."},
-            {"role": "user", "content": "Extract the bank name, account name, month of the statement, and the ending balance from the provided text. Be concise and check your work for accuracy before responding"}
+            {"role": "user", "content": "Extract the bank name, account name, month of the statement, and the ending balance from the provided text. Be concise and accurate"}
         ]
         chunks = chunk_text(text, CHUNK_SIZE)
 
