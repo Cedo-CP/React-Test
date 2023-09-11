@@ -8,9 +8,10 @@ function App() {
     const [pdfUrls, setPdfUrls] = useState('');
     const [status, setStatus] = useState({});
     const [summarizedResponses, setSummarizedResponses] = useState({});
-    const FLASK_SERVER_URL = 'http://127.0.0.1:5000';
+    const FLASK_SERVER_URL = 'https://literate-journey-r5v477rjr9q2rj7-3000.app.github.dev/';
 
     const handleIdentifyDocuments = async (event) => {
+        console.log("handleIdentifyDocuments triggered")
         event.preventDefault();
 
         try {
