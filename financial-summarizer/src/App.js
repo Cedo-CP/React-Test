@@ -8,7 +8,7 @@ function App() {
     const [pdfUrls, setPdfUrls] = useState('');
     const [status, setStatus] = useState({});
     const [summarizedResponses, setSummarizedResponses] = useState({});
-    const FLASK_SERVER_URL = 'http://127.0.0.1:5000';
+    const FLASK_SERVER_URL = 'https://uaas-fs.uc.r.appspot.com/';
 
     const handleIdentifyDocuments = async (event) => {
         event.preventDefault();
