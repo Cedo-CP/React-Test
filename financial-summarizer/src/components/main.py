@@ -252,5 +252,5 @@ def summarize_all_responses():
 def home():
     return render_template('index.html', status=status)
 
-if __name__ == '__app__':
+if __name__ == '__main__':
     app.run(debug=True)
