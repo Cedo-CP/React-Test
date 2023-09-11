@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import openai
 import tiktoken
@@ -239,7 +239,7 @@ def summarize_all_responses():
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
-    return render_template('index.html', status=status)
+    return send_from_directory('src/components/build', 'index.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
