@@ -1,5 +1,5 @@
 runtime: python311
-entrypoint: gunicorn -b :$PORT src.components.main:main # "-b :$PORT" ensures it binds to the port GAE provides.
+entrypoint: gunicorn -b :$PORT components.main:main
 
 instance_class: F2
 
@@ -8,22 +8,21 @@ automatic_scaling:
   min_instances: 1
   max_instances: 10
 
-# Define static handlers
 handlers:
   # Serve images, icons, and json from React build
   - url: /(.*\.(json|ico|jpg|png|svg))
-    static_files: src/components/build/\1
-    upload: src/components/build/.*\.(json|ico|jpg|png|svg)
+    static_files: components/build/\1
+    upload: components/build/.*\.(json|ico|jpg|png|svg)
 
   # Serve CSS and JS from React build
   - url: /static/(.*\.(css|js))
-    static_files: src/components/build/static/\1
-    upload: src/components/build/static/.*\.(css|js)
+    static_files: components/build/static/\1
+    upload: components/build/static/.*\.(css|js)
 
   # Let Flask handle all other routes
   - url: /.*
     script: auto
 
-# Environment variables can be added if needed.
+# For now, I've kept the environment variable as is, but consider using a secret manager.
 env_variables:
   SECRET_KEY: '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'
