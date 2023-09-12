@@ -52,64 +52,63 @@ status = {}
 @app.route('/identify-documents', methods=['POST'])
 def identify_documents():
     global status
-    raw_urls = request.form['pdf_urls']
+    pdf_url = request.form['pdf_url']
     
-    # Split by comma
-    pdf_urls = raw_urls.split(',')
+    # Sanitize and preprocess the URL to remove commas
+    pdf_url = pdf_url.replace(',', '')
 
-    for pdf_url in pdf_urls:
-        pdf_url = pdf_url.strip()
-        if pdf_url.startswith("//"):
-            pdf_url = "https:" + pdf_url
-        if not pdf_url:
-            continue
+    if pdf_url.startswith("//"):
+        pdf_url = "https:" + pdf_url
+    if not pdf_url:
+        return jsonify(error="No valid PDF URL provided"), 400
+    print(f"Sanitized URL: {pdf_url}") 
 
-        status[pdf_url] = {"step": "Downloading PDF"}
-        text = extract_text_from_pdf(pdf_url)
+    status[pdf_url] = {"step": "Downloading PDF"}
+    text = extract_text_from_pdf(pdf_url)
 
-        # Identification Phase
-        status[pdf_url]["step"] = "Identifying document type"
-        identification_messageList = [
-            {"role": "system", "content": "You are a helpful assistant well-schooled in accounting, finance, and tax."},
-            {"role": "user", "content": "Your task is to identify if the provided text is from a bank statement, a financial statement (such as a profit and loss statement, a balance sheet or income or cashflow statement) or if the document is a business tax return. Your response should simply be the type of document you identified."},
-            {"role": "user", "content": text[:CHUNK_SIZE]}  # Taking the first chunk for identification
-        ]
+    # Identification Phase
+    status[pdf_url]["step"] = "Identifying document type"
+    identification_messageList = [
+        {"role": "system", "content": "You are a helpful assistant well-schooled in accounting, finance, and tax."},
+        {"role": "user", "content": "Your task is to identify if the provided text is from a bank statement, a financial statement (such as a profit and loss statement, a balance sheet or income or cashflow statement) or if the document is a business tax return. Your response should simply be the type of document you identified."},
+        {"role": "user", "content": text[:CHUNK_SIZE]}  # Taking the first chunk for identification
+    ]
 
-        try:
-            identification_response = openai.ChatCompletion.create(
-                model='openai/gpt-3.5-turbo-16k',
-                headers={
-                    "HTTP-Referer": OPENROUTER_REFERRER
-                },
-                messages=identification_messageList,
-                max_tokens=100,
-                temperature=0.1,
-                top_p=1,
-                transforms=["middle-out"],
-            )
-            print("Identification Response:", identification_response)
-            logging.info("Identification Response for {}: {}".format(pdf_url, identification_response))
+    try:
+        identification_response = openai.ChatCompletion.create(
+            model='openai/gpt-3.5-turbo-16k',
+            headers={
+                "HTTP-Referer": OPENROUTER_REFERRER
+            },
+            messages=identification_messageList,
+            max_tokens=100,
+            temperature=0.1,
+            top_p=1,
+            transforms=["middle-out"],
+        )
+        print("Identification Response:", identification_response)
+        logging.info("Identification Response for {}: {}".format(pdf_url, identification_response))
 
-            if 'error' in identification_response:
-                error_message = identification_response['error']['message']
-                status[pdf_url]["error"] = error_message
-                continue
+        if 'error' in identification_response:
+            error_message = identification_response['error']['message']
+            status[pdf_url]["error"] = error_message
+            return jsonify(status)
 
-            document_type = identification_response['choices'][0]['message']['content']
-            status[pdf_url]["document_type"] = document_type
+        document_type = identification_response['choices'][0]['message']['content']
+        status[pdf_url]["document_type"] = document_type
 
-            # If the document is identified as a bank statement, store only the first couple of pages
-            if "bank statement" in document_type.lower():
-                text = extract_text_from_pdf(pdf_url, pages=2)
-                status[pdf_url]["optimized_text"] = text
-            else:
-                status[pdf_url]["optimized_text"] = text  # Store the entire text for other document types
+        # If the document is identified as a bank statement, store only the first couple of pages
+        if "bank statement" in document_type.lower():
+            text = extract_text_from_pdf(pdf_url, pages=2)
+            status[pdf_url]["optimized_text"] = text
+        else:
+            status[pdf_url]["optimized_text"] = text  # Store the entire text for other document types
 
-            status[pdf_url]["step"] = "Identification Completed"
+        status[pdf_url]["step"] = "Identification Completed"
 
-        except Exception as e:
-            status[pdf_url]["error"] = str(e)
-            continue
+    except Exception as e:
+        status[pdf_url]["error"] = str(e)
+        return jsonify(status)
 
     return jsonify(status)
 
@@ -164,33 +163,36 @@ def start_analysis_for_url():
                 logging.error(f"Moderation error for {pdf_url}: {e}")
                 return jsonify(error="API Response Error: Please try again."), 403
 
-    status[pdf_url]["analysis"] = combined_response
+    status[pdf_url]["combinedresponse"] = combined_response
     status[pdf_url]["step"] = "Analysis Completed"
     print("combined response", combined_response)
     logging.info("Analysis completed for {}: {}".format(pdf_url, combined_response))
 
-    return jsonify(success=True, analysis=combined_response)
+    return jsonify(success=True, combined_response=combined_response)
 
 @app.route('/check-status', methods=['GET'])
 def check_status():
     return jsonify(status)
 
-@app.route('/summarize-all-responses', methods=['GET'])
+@app.route('/summarize-all-responses', methods=['POST'])
 def summarize_all_responses():
+    data_received = request.json
+    combined_data = data_received.get('combinedData', [])
+
     combined_responses = {
         "bank statement": "",
         "financial statement": ""
     }
 
     # Combine all responses based on document type
-    for pdf_url, data in status.items():
-        document_type = data.get("document_type", "")
-        analysis = data.get("analysis", "")
+    for entry in combined_data:
+        document_type = entry.get("document_type", "").lower()
+        combined_response = entry.get("combined_response", "")
 
-        if "bank statement" in document_type.lower():
-            combined_responses["bank statement"] += analysis + "\n\n"
-        elif "financial statement" in document_type.lower():
-            combined_responses["financial statement"] += analysis + "\n\n"
+        if "bank statement" in document_type:
+            combined_responses["bank statement"] += combined_response + "\n\n"
+        elif "financial statement" in document_type:
+            combined_responses["financial statement"] += combined_response + "\n\n"
 
     # Send combined responses to OpenAI for summarization
     summaries = {}
@@ -233,7 +235,7 @@ def summarize_all_responses():
                     logging.error(f"Moderation error for {doc_type}: {e}")
                     return jsonify(error="API Response Error: Please try again."), 403
 
-        summaries[doc_type] = summarized_response
+        summaries[doc_type] = summarized_response.strip()  # Removing any extra newlines at the end
 
     return jsonify(summaries)
 

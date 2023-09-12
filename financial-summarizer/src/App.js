@@ -1,39 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './App.css';
-import AnalysisCards from './components/AnalysisCards';
+import AnalysisCards from './components/AnalysisCards'; // Note: This import remains unused in the provided code
 import SummaryCard from './components/SummaryCard';
-
 
 function App() {
     const [pdfUrls, setPdfUrls] = useState('');
     const [status, setStatus] = useState({});
     const [summarizedResponses, setSummarizedResponses] = useState({});
-    const FLASK_SERVER_URL = 'https://uaas-fs.uc.r.appspot.com/';
+    const [currentDocument, setCurrentDocument] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const FLASK_SERVER_URL = 'http://127.0.0.1:5000';
 
     const handleIdentifyDocuments = async (event) => {
-        event.preventDefault();
+    event.preventDefault();
+    setLoading(true);
 
+    // Replace commas with an empty string
+    const sanitizedUrls = pdfUrls.replace(/,/g, '');
+
+    const urlsArray = sanitizedUrls.trim().split('\n');
+
+    for (let pdfUrl of urlsArray) {
         try {
             const response = await fetch(`${FLASK_SERVER_URL}/identify-documents`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    pdf_urls: pdfUrls,
-                }),
-            });
-
-            const data = await response.json();
-            setStatus(data);
-        } catch (error) {
-            console.error("Error identifying documents:", error);
-        }
-    };
-
-    const handleStartAnalysis = async (pdfUrl) => {
-        try {
-            const response = await fetch(`${FLASK_SERVER_URL}/start-analysis-for-url`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -42,43 +31,100 @@ function App() {
                     pdf_url: pdfUrl,
                 }),
             });
-    
-            const data = await response.json();
-            if (data.success) {
-                setStatus(prevStatus => {
-                    const updatedStatus = { ...prevStatus };
-                    updatedStatus[pdfUrl] = {
-                        ...updatedStatus[pdfUrl],
-                        analysis: data.analysis.split('\n'),  // Split the raw response by lines
-                        step: "Analysis Completed"
-                    };
-                    return updatedStatus;
-                });
+
+            let data;
+            try {
+                data = await response.json();
+            } catch (err) {
+                console.error("Received non-JSON response from backend for URL:", pdfUrl);
+                continue; // skip to the next iteration
+            }
+
+            if (response.ok) {
+                for (const [responseUrl, result] of Object.entries(data)) {
+                    if (result.document_type) {
+                        const content = result.document_type;
+                        setStatus(prevStatus => ({
+                            ...prevStatus,
+                            [responseUrl]: {
+                                content: content,
+                                step: result.step || "Identification Completed",
+                                optimizedText: result.optimized_text || null,
+                            }
+                        }));
+                        setCurrentDocument(responseUrl);
+                    } else {
+                        console.error("Unexpected structure for URL:", responseUrl, "Result:", result);
+                    }
+                }
             } else {
-                console.error("Error starting analysis:", data.error);
+                console.error("Backend error during identification or unexpected response structure for URL:", pdfUrl, "Full response:", data);
             }
         } catch (error) {
-            console.error("Error starting analysis:", error);
+            console.error("Error identifying document:", error);
         }
-        
-        // Log the updated status to see if the component is re-rendering
-        console.log(status);
+    }
+    setLoading(false);
+};
+
+    const handleStartAnalysis = async (pdfUrl) => {
+        setLoading(true);
+    
+        const response = await fetch(`${FLASK_SERVER_URL}/start-analysis-for-url`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                pdf_url: pdfUrl,
+            }),
+        });
+    
+        const data = await response.json();
+    
+        if (data.success && data['combined_response']) {
+            setStatus(prevStatus => {
+                const updatedStatus = { ...prevStatus };
+                updatedStatus[pdfUrl] = {
+                    ...updatedStatus[pdfUrl],
+                    step: "Analysis Completed",
+                    analysis: data['combined_response'].split("\n") // Splitting by new line if there are multiple lines
+                };
+                return updatedStatus;
+            });
+        } else {
+            console.error("Error starting analysis:", data.error || "Unknown error");
+        }
+        setLoading(false);
     };    
 
     const handleSummarizeResponses = async () => {
         try {
-            const response = await fetch(`${FLASK_SERVER_URL}/summarize-all-responses`, {
-                method: 'GET',
-            });
+            setLoading(true);
+            
+            // Structure the data to include both the identified document type and combined response
+            const combinedDataToSend = Object.entries(status).map(([pdfUrl, details]) => ({
+                document_type: details.content, // 'content' here seems to store the identified document type
+                combined_response: details.analysis.join("\n") // Assuming 'analysis' is an array of strings
+            }));
     
+            const response = await fetch(`${FLASK_SERVER_URL}/summarize-all-responses`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ combinedData: combinedDataToSend }),
+            });
+        
             const data = await response.json();
             setSummarizedResponses(data);
-    
         } catch (error) {
             console.error("Error summarizing responses:", error);
+        } finally {
+            setLoading(false);
         }
-    };    
-
+    };     
+    
     const allAnalysisCompleted = Object.values(status).every(details => details.step === "Analysis Completed");
 
     return (
@@ -87,7 +133,6 @@ function App() {
                 <img src="https://otso.io/wp-content/uploads/2022/01/Logo-Otso.png" alt="Otso Logo" className="mx-auto mb-6 w-32 h-auto" />
                 <h1 className="text-2xl font-bold">PDF Analyzer</h1>
             </header>
-
             <section>
                 <form onSubmit={handleIdentifyDocuments} className="mb-12">
                     <div className="mb-4">
@@ -115,12 +160,12 @@ function App() {
                     )}
                 </form>
             </section>
-
+            {loading && <div>Loading...</div>}
             <section id="analysisCards">
                 {Object.entries(status).map(([pdfUrl, details]) => (
                     <div key={pdfUrl} className="bg-white p-4 rounded shadow mt-4">
                         <h2 className="text-xl mb-2 truncate">{pdfUrl}</h2>
-                        <p><strong>Type:</strong> {details.document_type}</p>
+                        <p><strong>Type:</strong> {details.content}</p>
                         <p><strong>Step:</strong> {details.step}</p>
                         <div className="mt-4">
                             {details.analysis ? (
@@ -130,7 +175,7 @@ function App() {
                             ) : null}
                         </div>
                         <div className="mt-4">
-                            <progress value="50" max="100" className="w-full"></progress>
+                            <progress value={details.analysis ? 100 : 50} max="100" className="w-full"></progress>
                         </div>
                         <div className="mt-4">
                             <strong>Analysis:</strong>
@@ -140,8 +185,6 @@ function App() {
                                 ))}
                             </ul>
                         </div>
-
-                        {/* New section inside the card to display summarized data */}
                         {summarizedResponses[pdfUrl] && (
                             <div className="mt-4 bg-gray-100 p-2 rounded">
                                 <strong>Summary:</strong>
@@ -151,14 +194,11 @@ function App() {
                     </div>
                 ))}
             </section>
-
-            {/* New Section for SummaryCard */}
             <section>
                 {Object.keys(summarizedResponses).length > 0 && (
                     <SummaryCard summaries={summarizedResponses} />
                 )}
             </section>
-
         </div>
     );
 }
