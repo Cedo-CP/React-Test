@@ -125,7 +125,7 @@ def start_analysis_for_url():
     if "bank statement" in document_type.lower():
         analysis_prompt = [
             {"role": "system", "content": "You are a financial expert."},
-            {"role": "user", "content": "Extract the bank name, account name, month of the statement, and the ending balance from the provided text. Be concise and accurate"}
+            {"role": "user", "content": "From the bank statement text provided, extract the following details: (1) banking institution name, (2) month of the statement, (3) owner of the account, and (4) the ending balance. Be concise and accurate"}
         ]
         chunks = chunk_text(text, CHUNK_SIZE)
 
@@ -146,11 +146,11 @@ def start_analysis_for_url():
     ]
         try:
             response = openai.ChatCompletion.create(
-                model='meta-llama/llama-2-70b-chat',
+                model='openai/gpt-3.5-turbo-16k',
                 headers={"HTTP-Referer": OPENROUTER_REFERRER},
                 messages=analysis_message,
                 max_tokens=1000,
-                temperature=0.2,
+                temperature=0.1,
                 top_p=1,
                 transforms=["middle-out"]
             )
@@ -222,7 +222,7 @@ def summarize_all_responses():
                     headers={"HTTP-Referer": OPENROUTER_REFERRER},
                     messages=analysis_message,
                     max_tokens=5000,
-                    temperature=0.3,
+                    temperature=0.2,
                     top_p=1,
                     transforms=["middle-out"]
                 )
