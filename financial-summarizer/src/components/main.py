@@ -125,7 +125,7 @@ def start_analysis_for_url():
     if "bank statement" in document_type.lower():
         analysis_prompt = [
             {"role": "system", "content": "You are a financial expert."},
-            {"role": "user", "content": "From the bank statement text provided, extract the following details: (1) banking institution name, (2) month of the statement, (3) owner of the account, and (4) the ending balance. Be concise and accurate"}
+            {"role": "user", "content": "From the bank statement text provided, extract the following details: (1) banking institution name, (2) month of the statement, (3) owner or name of the account (not the bank, the actual account owner) and (4) the ending balance. Be concise and accurate"}
         ]
         chunks = chunk_text(text, CHUNK_SIZE)
 
