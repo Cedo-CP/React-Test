@@ -1,4 +1,5 @@
 {
     "appService.defaultWebAppToDeploy": "/subscriptions/2b678423-7482-456b-bedb-f103185149c6/resourceGroups/uaas-fs_group/providers/Microsoft.Web/sites/uaas-fs",
-    "appService.deploySubpath": "."
+    "appService.deploySubpath": ".",
+    "scribeai.models": "gpt-4"
 }

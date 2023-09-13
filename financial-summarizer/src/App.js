@@ -12,60 +12,59 @@ function App() {
     const FLASK_SERVER_URL = 'http://127.0.0.1:5000';
 
     const handleIdentifyDocuments = async (event) => {
-    event.preventDefault();
-    setLoading(true);
-
-    // Replace commas with an empty string
-    const sanitizedUrls = pdfUrls.replace(/,/g, '');
-
-    const urlsArray = sanitizedUrls.trim().split('\n');
-
-    for (let pdfUrl of urlsArray) {
-        try {
-            const response = await fetch(`${FLASK_SERVER_URL}/identify-documents`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    pdf_url: pdfUrl,
-                }),
-            });
-
-            let data;
+        event.preventDefault();
+        setLoading(true);
+    
+        // Split URLs based on ', ' (comma followed by space)
+        const urlsArray = pdfUrls.trim().split(', ');
+    
+        for (let pdfUrl of urlsArray) {
+            // Additional individual URL sanitization (if necessary) can be done here
             try {
-                data = await response.json();
-            } catch (err) {
-                console.error("Received non-JSON response from backend for URL:", pdfUrl);
-                continue; // skip to the next iteration
-            }
-
-            if (response.ok) {
-                for (const [responseUrl, result] of Object.entries(data)) {
-                    if (result.document_type) {
-                        const content = result.document_type;
-                        setStatus(prevStatus => ({
-                            ...prevStatus,
-                            [responseUrl]: {
-                                content: content,
-                                step: result.step || "Identification Completed",
-                                optimizedText: result.optimized_text || null,
-                            }
-                        }));
-                        setCurrentDocument(responseUrl);
-                    } else {
-                        console.error("Unexpected structure for URL:", responseUrl, "Result:", result);
-                    }
+                const response = await fetch(`${FLASK_SERVER_URL}/identify-documents`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        pdf_url: pdfUrl,
+                    }),
+                });
+    
+                let data;
+                try {
+                    data = await response.json();
+                } catch (err) {
+                    console.error("Received non-JSON response from backend for URL:", pdfUrl);
+                    continue; // skip to the next iteration
                 }
-            } else {
-                console.error("Backend error during identification or unexpected response structure for URL:", pdfUrl, "Full response:", data);
+    
+                if (response.ok) {
+                    for (const [responseUrl, result] of Object.entries(data)) {
+                        if (result.document_type) {
+                            const content = result.document_type;
+                            setStatus(prevStatus => ({
+                                ...prevStatus,
+                                [responseUrl]: {
+                                    content: content,
+                                    step: result.step || "Identification Completed",
+                                    optimizedText: result.optimized_text || null,
+                                }
+                            }));
+                            setCurrentDocument(responseUrl);
+                        } else {
+                            console.error("Unexpected structure for URL:", responseUrl, "Result:", result);
+                        }
+                    }
+                } else {
+                    console.error("Backend error during identification or unexpected response structure for URL:", pdfUrl, "Full response:", data);
+                }
+            } catch (error) {
+                console.error("Error identifying document:", error);
             }
-        } catch (error) {
-            console.error("Error identifying document:", error);
         }
-    }
-    setLoading(false);
-};
+        setLoading(false);
+    };    
 
     const handleStartAnalysis = async (pdfUrl) => {
         setLoading(true);
