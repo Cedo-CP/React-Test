@@ -19,7 +19,7 @@ handlers:
     static_files: components/build/static/\1
     upload: components/build/static/.*\.(css|js)
 
-  # Let Flask handle all other routes
+  # Let Flask handle all other routes (serving the index.html for other routes for React SPA routing)
   - url: /.*
     script: auto
 
