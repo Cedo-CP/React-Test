@@ -239,9 +239,10 @@ def summarize_all_responses():
 
     return jsonify(summaries)
 
-@app.route('/', methods=['GET', 'POST'])
-def home():
-    return send_from_directory('src/components/build', 'index.html')
+@app.route('/', defaults={'path': ''}, methods=['GET', 'POST'])
+@app.route('/<path:path>', methods=['GET', 'POST'])
+def catch_all(path):
+    return send_from_directory('components/build', 'index.html')
 
 @app.route('/test', methods=['GET'])
 def test_route():
