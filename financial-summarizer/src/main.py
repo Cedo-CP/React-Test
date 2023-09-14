@@ -243,5 +243,9 @@ def summarize_all_responses():
 def home():
     return send_from_directory('src/components/build', 'index.html')
 
+@app.route('/test', methods=['GET'])
+def test_route():
+    return "Hello from the backend!"
+
 if __name__ == '__main__':
     app.run(debug=True)
