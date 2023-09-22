@@ -1,5 +1,5 @@
 runtime: python311
-entrypoint: gunicorn -b :$PORT main:app  # "-b :$PORT" ensures it binds to the port GAE provides.
+entrypoint: gunicorn -b :$PORT main:app
 
 instance_class: F2
 
@@ -8,22 +8,26 @@ automatic_scaling:
   min_instances: 1
   max_instances: 10
 
-# Define static handlers
 handlers:
+
   # Serve images, icons, and json from React build
   - url: /(.*\.(json|ico|jpg|png|svg))
-  static_files: src/components/build/\1
-  upload: src/components/build/.*\.(json|ico|jpg|png|svg)
+    static_files: src/components/build/\1
+    upload: src/components/build/.*\.(json|ico|jpg|png|svg)$
 
-# Serve CSS and JS from React build
-- url: /static/(.*\.(css|js))
-  static_files: src/components/build/static/\1
-  upload: src/components/build/static/.*\.(css|js)
+  # Serve CSS from React build
+  - url: /static/css/(.*\.css)
+    static_files: src/components/build/static/css/\1
+    upload: src/components/build/static/css/.*\.css$
+
+  # Serve JS from React build (adjust if you have a JS directory similar to the CSS path you provided)
+  - url: /static/js/(.*\.js)
+    static_files: src/components/build/static/js/\1
+    upload: src/components/build/static/js/.*\.js$
 
   # Let Flask handle all other routes
   - url: /.*
     script: auto
 
-# Environment variables can be added if needed.
 env_variables:
   OPENAI_API_KEY: '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'
