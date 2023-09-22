@@ -12,13 +12,13 @@ automatic_scaling:
 handlers:
   # Serve images, icons, and json from React build
   - url: /(.*\.(json|ico|jpg|png|svg))
-    static_files: src/components/build/\1
-    upload: src/components/build/.*\.(json|ico|jpg|png|svg)
+  static_files: src/components/build/\1
+  upload: src/components/build/.*\.(json|ico|jpg|png|svg)
 
-  # Serve CSS and JS from React build
-  - url: /static/(.*\.(css|js))
-    static_files: src/components/build/static/\1
-    upload: src/components/build/static/.*\.(css|js)
+# Serve CSS and JS from React build
+- url: /static/(.*\.(css|js))
+  static_files: src/components/build/static/\1
+  upload: src/components/build/static/.*\.(css|js)
 
   # Let Flask handle all other routes
   - url: /.*
@@ -26,4 +26,4 @@ handlers:
 
 # Environment variables can be added if needed.
 env_variables:
-  SECRET_KEY: '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'
+  OPENAI_API_KEY: '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'
