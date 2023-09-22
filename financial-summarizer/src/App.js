@@ -11,7 +11,7 @@ function App() {
     const [loading, setLoading] = useState(false);
     const [documentList, setDocumentList] = useState([]);
     const [selectedDocuments, setSelectedDocuments] = useState([]);
-    const FLASK_SERVER_URL = 'http://127.0.0.1:5000';
+    const FLASK_SERVER_URL = 'https://uaas-fs.uc.r.appspot.com/';
 
     const sanitizeUrl = (url) => {
         const sanitizedUrl = url.replace('//', '');  // remove '//' from the URL
